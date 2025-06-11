@@ -1,0 +1,367 @@
+from google.colab import files
+uploaded = files.upload()
+
+import pandas as pd
+
+customers = pd.read_csv("customers.csv")
+transactions = pd.read_csv("transaction.csv")
+feedback = pd.read_csv("Feedback.csv")
+service_tickets = pd.read_csv("Service_Tickets.csv")
+churn_labels = pd.read_csv("Churn_Labels.csv")  # Only if you exported it
+
+
+# See the first 5 rows
+customers.head()
+
+# Get summary info (column names, data types, missing values)
+customers.info()
+
+# Show summary stats for numerical columns
+customers.describe()
+
+# Check missing values
+customers.isnull().sum()
+
+customers['signup_date'] = pd.to_datetime(customers['signup_date'], errors='coerce')
+
+
+customers.isnull().sum()
+
+
+customers['email'] = customers['email'].str.lower().str.strip()
+
+
+customers['namee'] = customers['namee'].str.strip()
+customers['location'] = customers['location'].str.strip()
+
+
+customers['location'] = customers['location'].fillna('Unknown')
+
+
+transactions.info()
+
+transactions['transaction_date'] = pd.to_datetime(transactions['transaction_date'], errors='coerce')
+
+
+feedback.info()
+
+feedback['feedback_date'] = pd.to_datetime(feedback['feedback_date'], errors='coerce')
+
+
+service_tickets.info()
+
+service_tickets['created_at'] = pd.to_datetime(service_tickets['created_at'], errors='coerce')
+service_tickets['resolved_at'] = pd.to_datetime(service_tickets['resolved_at'], errors='coerce')
+
+service_tickets.info()
+
+churn_labels.info()
+
+churn_labels['labeled_at'] = pd.to_datetime(churn_labels['labeled_at'], errors='coerce')
+
+
+customers.isnull().sum()
+
+# a) Transactions: Frequency, Recency, Amount Spent
+tx_summary = transactions.groupby('customer_id').agg(
+    total_transactions=('transaction_id', 'count'),
+    total_spent=('amount_spent', 'sum'),
+    avg_spent=('amount_spent', 'mean'),
+    last_transaction=('transaction_date', 'max')
+).reset_index()
+
+
+# Days since last transaction
+tx_summary['days_since_last_tx'] = (pd.to_datetime('today') - tx_summary['last_transaction']).dt.days
+
+
+# b) Feedback: Average Rating
+feedback_summary = feedback.groupby('customer_id').agg(
+    avg_rating=('rating', 'mean'),
+    total_feedbacks=('feedback_id', 'count')
+).reset_index()
+
+# c) Service Tickets: Frequency
+ticket_summary = service_tickets.groupby('customer_id').agg(
+    total_tickets=('ticket_id', 'count')
+).reset_index()
+
+# Step 3: Merge all summaries with Customers
+df = customers.merge(tx_summary, on='customer_id', how='left')
+df = df.merge(feedback_summary, on='customer_id', how='left')
+df = df.merge(ticket_summary, on='customer_id', how='left')
+df = df.merge(churn_labels, on='customer_id', how='left')
+
+# Step 4: Final Checks
+print("Final shape:", df.shape)
+print(df.head())
+
+df['location'] = df['location'].fillna('Unknown')
+df['total_transactions'] = df['total_transactions'].fillna(0)
+df['total_spent'] = df['total_spent'].fillna(0)
+df['avg_spent'] = df['avg_spent'].fillna(0)
+df['days_since_last_tx'] = df['days_since_last_tx'].fillna(999)
+df['avg_rating'] = df['avg_rating'].fillna(3.0)
+df['total_feedbacks'] = df['total_feedbacks'].fillna(0)
+df['total_tickets'] = df['total_tickets'].fillna(0)
+df = df.dropna(subset=['churned'])  # Drop rows with no churn label
+
+
+df = pd.get_dummies(df, columns=['location'], drop_first=True)
+
+
+df = df.drop(columns=['namee', 'email', 'signup_date', 'last_transaction'])
+
+
+df['churned'] = df['churned'].astype(int)
+
+
+X = df.drop(columns=['customer_id', 'churned'])
+y = df['churned']
+
+
+from sklearn.model_selection import train_test_split
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+
+
+
+
+df['churned'] = df['churned'].astype(int)
+
+X = df.drop(columns=['customer_id', 'churned'])
+y = df['churned']
+
+print(X_train.dtypes)
+
+
+X_train = X_train.drop('churn_reason', axis=1)
+X_test = X_test.drop('churn_reason', axis=1)
+
+
+print(X_train.dtypes)
+
+
+print(X_test.dtypes)
+
+
+datetime_cols = X_train.select_dtypes(include='datetime64[ns]').columns
+print("Datetime columns:", datetime_cols)
+
+
+print(y.isna().sum())
+
+
+print(y.head(10))
+
+
+import numpy as np
+
+# Convert string 'nan' to actual NaN
+y = y.replace("nan", np.nan)
+
+# Drop again if any NaN remains
+y = y.dropna()
+
+# Also filter X to match y
+X = X.loc[y.index]
+
+# Double-check type
+print(y.unique())
+print(y.dtype)
+
+
+print(X.shape)
+print(y.shape)
+
+
+X = X.loc[y.index]
+
+
+print("y unique values:", y.unique())
+print("y dtype:", y.dtype)
+
+
+print("X shape:", X.shape)
+print("y shape:", y.shape)
+
+
+non_numeric_cols = X.select_dtypes(include='object').columns
+print("Non-numeric columns:\n", non_numeric_cols)
+
+
+X = pd.get_dummies(X, drop_first=True)
+
+
+print(X.dtypes)  # should show int64, float64, or bool
+
+
+datetime_cols = X.select_dtypes(include='datetime64[ns]').columns
+print("Datetime columns:", datetime_cols)
+
+
+X = X.drop(columns=datetime_cols)
+
+
+print(y.value_counts())
+
+
+print(y.value_counts())
+
+
+# 1. Get all customer IDs from the main customer table
+all_customers = customers['customer_id']
+
+# 2. Get churned customers (i.e., those already labeled)
+churned_customers = churn_labels['customer_id']
+
+# 3. Find customers who are NOT labeled as churned
+non_churned_ids = all_customers[~all_customers.isin(churned_customers)]
+
+# 4. Create a new DataFrame for non-churned customers
+non_churned = pd.DataFrame({
+    'customer_id': non_churned_ids,
+    'churned': 0,
+    'churn_reason': None
+})
+
+# 5. Append these to the original churn_labels_df
+churn_labels = pd.concat([churn_labels, non_churned], ignore_index=True)
+
+# 6. Reset index (to avoid merge errors later)
+churn_labels.reset_index(drop=True, inplace=True)
+
+
+print(churn_labels['churned'].value_counts())
+
+
+# Merge with customers_df
+final = pd.merge(customers, churn_labels, on='customer_id', how='inner')
+
+# Split features and target
+X = final.drop(columns=['customer_id', 'churned', 'churn_reason'])
+y = final['churned']
+
+
+# 1. Transactions: total spent, last transaction date
+tx_data = transactions.groupby('customer_id').agg({
+    'amount_spent': 'sum',
+    'transaction_date': 'max'
+}).rename(columns={
+    'amount_spent': 'total_spent',
+    'transaction_date': 'last_transaction_date'
+})
+
+# 2. Feedback: average rating
+fb_data = feedback.groupby('customer_id').agg({
+    'rating': 'mean'
+}).rename(columns={'rating': 'avg_rating'})
+
+# 3. Tickets: number of tickets
+tickets_data = service_tickets.groupby('customer_id').size().reset_index(name='num_tickets')
+
+# 4. Merge all
+data = customers.merge(tx_data, on='customer_id', how='left') \
+                   .merge(fb_data, on='customer_id', how='left') \
+                   .merge(tickets_data, on='customer_id', how='left') \
+                   .merge(churn_labels[['customer_id', 'churned']], on='customer_id', how='left')
+
+
+# Fill NaNs for missing data
+data['total_spent'] = data['total_spent'].fillna(0)
+data['avg_rating'] = data['avg_rating'].fillna(0)
+data['num_tickets'] = data['num_tickets'].fillna(0)
+data['last_transaction_date'] = pd.to_datetime(data['last_transaction_date'], errors='coerce')
+
+# Replace NaN churn labels if any
+data['churned'] = data['churned'].fillna(0).astype(int)
+
+
+# Days since last transaction
+data['days_since_last_tx'] = (pd.Timestamp.today() - data['last_transaction_date']).dt.days.fillna(999)
+
+# Drop unneeded columns
+data_model = data.drop(['customer_id', 'namee', 'email', 'signup_date', 'location', 'last_transaction_date'], axis=1)
+
+
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+
+X = data_model.drop('churned', axis=1)
+y = data_model['churned']
+
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.3, random_state=42, stratify=y)
+
+
+from sklearn.linear_model import LogisticRegression
+model = LogisticRegression(max_iter=1000)
+model.fit(X_train, y_train)
+
+
+from sklearn.metrics import classification_report, confusion_matrix
+
+y_pred = model.predict(X_test)
+print(confusion_matrix(y_test, y_pred))
+print(classification_report(y_test, y_pred))
+
+
+from sklearn.ensemble import RandomForestClassifier
+rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
+rf_model.fit(X_train, y_train)
+
+
+from sklearn.metrics import classification_report
+y_pred_rf = rf_model.predict(X_test)
+print(classification_report(y_test, y_pred_rf))
+
+
+model.predict(new_data)
+
+service_tickets.head()
+
+
+issue_summary = service_tickets.groupby('customer_id').agg(
+    num_issues=('issue_type', 'nunique')  # Count of unique issues
+).reset_index()
+
+
+
+data = data.merge(issue_summary, on='customer_id', how='left')
+
+
+data['num_issues'] = data['num_issues'].fillna(0)
+
+
+# Just before model
+data_model = data.drop(['customer_id', 'namee', 'email', 'signup_date', 'location', 'last_transaction_date'], axis=1)
+
+
+
+X = data_model.drop('churned', axis=1)
+y = data_model['churned']
+
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.3, random_state=42, stratify=y)
+
+model = LogisticRegression(max_iter=1000)
+model.fit(X_train, y_train)
+
+
+# Plot feature importance
+coefficients = pd.Series(model.coef_[0], index=X.columns)
+plt.figure(figsize=(10,6))
+sns.barplot(x=coefficients.values, y=coefficients.index)
+plt.title("Feature Importance (Logistic Regression)")
+plt.show()
+

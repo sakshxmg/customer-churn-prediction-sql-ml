@@ -1,4 +1,4 @@
-# 📉 Customer Churn Prediction using Logistic Regression
+#  Customer Churn Prediction using Logistic Regression
 
 This project aims to predict customer churn using a logistic regression model. It leverages customer transaction history, service interactions, and feedback data to identify customers likely to churn and provides actionable insights for improving customer retention.
 
@@ -21,7 +21,7 @@ Customer churn impacts profitability. The goal is to identify high-risk churn cu
 
 ---
 
-## 📊 Datasets Used
+##  Datasets Used
 
 - `customers.csv` – Customer demographics and registration info
 - `transaction.csv` – Purchase and spending details
@@ -31,7 +31,7 @@ Customer churn impacts profitability. The goal is to identify high-risk churn cu
 
 ---
 
-## ⚙️ Features Engineered
+##  Features Engineered
 
 - `total_spent`: Total money spent
 - `avg_rating`: Average feedback rating
@@ -41,7 +41,7 @@ Customer churn impacts profitability. The goal is to identify high-risk churn cu
 
 ---
 
-## 🤖 Model Used
+##  Model Used
 
 - **Logistic Regression**
 - Train-Test Split: 70-30 stratified
@@ -50,7 +50,7 @@ Customer churn impacts profitability. The goal is to identify high-risk churn cu
 
 ---
 
-## 📈 Results
+##  Results
 
 - **Accuracy**: ~87%
 - **Key Drivers of Churn**:
@@ -60,7 +60,7 @@ Customer churn impacts profitability. The goal is to identify high-risk churn cu
 
 ---
 
-## 📌 Key Insights
+##  Key Insights
 
 - Dissatisfied and inactive users are highly likely to churn.
 - Loyal and frequent spenders are likely to stay.
@@ -68,7 +68,7 @@ Customer churn impacts profitability. The goal is to identify high-risk churn cu
 
 ---
 
-## ✅ Recommendations
+##  Recommendations
 
 - Launch retention campaigns for at-risk segments.
 - Proactively follow up with low-rating customers.
@@ -76,7 +76,7 @@ Customer churn impacts profitability. The goal is to identify high-risk churn cu
 
 ---
 
-## 🛠 Tools & Technologies
+##  Tools & Technologies
 
 - Python, Pandas, NumPy
 - Scikit-learn
@@ -85,7 +85,7 @@ Customer churn impacts profitability. The goal is to identify high-risk churn cu
 
 ---
 
-## 📎 How to Run
+##  How to Run
 
 ```bash
 # Clone the repo
